@@ -9,6 +9,6 @@ if not find_dotenv():
 else:
     # load_dotenv()
     load_dotenv(dotenv_path=env_path)
-
+# in wallet N4
 btc_address = os.getenv("BITCOIN_ADDRESS")
 # print(btc_address)
