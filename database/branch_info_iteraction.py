@@ -1,4 +1,4 @@
-from peewee import SqliteDatabase, Model, AnyField, IntegerField, TextField
+from peewee import SqliteDatabase, Model, AnyField, IntegerField, TextField, FloatField
 from config_data.config import database_location
 from datetime import datetime
 
@@ -35,10 +35,14 @@ def create_branch_model(wishful_table_name):
 
 
 def get_branches_list():
-    anylist = ["main_branch", "russian_branch", "english_branch", "spanish_branch"]
-    return anylist
+    # anylist = ["main_branch", "russian_branch", "english_branch", "spanish_branch"]
+    # SQL-запрос для получения списка таблиц
+    query = "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_branch';"
 
-
+    # Выполнение запроса через peewee
+    cursor = db.execute_sql(query)
+    tables = [row[0] for row in cursor.fetchall()]
+    return tables
 
 def get_posts_from_branch(branch_id):
     # Пример использования
@@ -50,7 +54,6 @@ def get_posts_from_branch(branch_id):
 
     DynamicBranchTable = create_branch_model(branch_id)
 
-
     query = (DynamicBranchTable
              .select()
              .offset(offset)
@@ -59,174 +62,10 @@ def get_posts_from_branch(branch_id):
     # Преобразуем результат запроса в список словарей
     list_for_users = list(query)
     list_for_users = list_for_users[::-1]
+    for transaction in list_for_users:
+        if 'amount_sent' in transaction:
+            transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
+        if 'timestamp' in transaction:
+            transaction['timestamp'] = transaction['timestamp'] * 1000
+
     return list_for_users
-
-    # elif branch_id == "english_branch":
-    #     return [
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 0.5,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'посты из "english_branch" будут тут',
-    #          'send_date': 1724891810,
-    #          'post_number': 1,
-    #          }]
-    # elif branch_id == "russian_branch":
-    #     return [
-    #     {'sender_name': 'Anonym',
-    #      'ton_amount': 0.5,
-    #      'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #      'message_text': 'посты из "russian_branch" будут тут',
-    #      'send_date': 1724891810,
-    #      'post_number': 1,
-    #      }]
-    # elif branch_id == "spanish_branch":
-    #     return [
-    #     {'sender_name': 'Anonym',
-    #      'ton_amount': 0.5,
-    #      'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #      'message_text': 'посты из "spanish_branch" будут тут',
-    #      'send_date': 1724891810,
-    #      'post_number': 1,
-    #      }]
-    # else:
-    #     return [
-    #         {'sender_name': 'такой ветки нету',
-    #          'ton_amount': 100000001,
-    #          'transaction_hash': 'хеш сумма транзакции',
-    #          'message_text': 'посты будут тут',
-    #          'send_date': 10000000000001,
-    #          'post_number': 1000000001,
-    #          }]
-    #     return posts[branch_id]
-
-    # Пример данных
-    # posts = {
-    #     "main_branch": [
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 0.5,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'первый пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 1,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 1,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'vtoroi пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 2,
-    #          },
-    # {'sender_name': 'Anonym',
-    #          'ton_amount': 10,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'tree пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 3,
-    #          }
-    #     ],
-    #     "russian_branch": [
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 100,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'four пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 4,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 1000,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'five пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 5,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 100,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'первый пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 6,
-    #          }
-    #         ,
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 100,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'первый пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 7,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 1000,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'five пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 5,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 1000,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'five пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 5,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 1000,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'five пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 5,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 1000,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'five пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 5,
-    #          }
-    #     ],
-    # "english_branch": [
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 0.5,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'первый пост english_branch',
-    #          'send_date': 1724891810,
-    #          'post_number': 1,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 1,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'english_branch ghfgjhdfhjdf',
-    #          'send_date': 1724891810,
-    #          'post_number': 2,
-    #          },
-    # {'sender_name': 'Anonym',
-    #          'ton_amount': 10,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'tree пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 3,
-    #          }
-    #     ],
-    # "spanish_branch": [
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 0.5,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'первый пост spanish_branch',
-    #          'send_date': 1724891810,
-    #          'post_number': 1,
-    #          },
-    #         {'sender_name': 'Anonym',
-    #          'ton_amount': 1,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'vtoroi пост spanish_branch',
-    #          'send_date': 1724891810,
-    #          'post_number': 2,
-    #          },
-    # {'sender_name': 'Anonym',
-    #          'ton_amount': 10,
-    #          'transaction_hash': '0:97ad93444915089e812238ff10abe9066d0b03ea3dba2a8630fb9c9f88aa455c',
-    #          'message_text': 'tree пост',
-    #          'send_date': 1724891810,
-    #          'post_number': 3,
-    #          }
-    #     ]
-    # }
