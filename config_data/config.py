@@ -12,3 +12,8 @@ else:
 
 
 database_location = os.getenv("DATABASE_LOCATION")
+main_branch_address = os.getenv("MAIN_BRANCH")
+english_branch_address = os.getenv("ENGLISH_BRANCH")
+spanish_branch_address = os.getenv("SPANISH_BRANCH")
+russian_branch_address = os.getenv("RUSSIAN_BRANCH")
+api_tonconsole = os.getenv("API_TONCONSOLE")

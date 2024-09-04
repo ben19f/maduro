@@ -1,6 +1,6 @@
 from peewee import SqliteDatabase, Model, AnyField, IntegerField, TextField, FloatField
 from config_data.config import database_location
-from datetime import datetime
+
 
 db = SqliteDatabase(f'{database_location}/maduro_first.db')
 
