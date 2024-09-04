@@ -21,9 +21,7 @@ def get_posts():
     # Получаем id_нужной_ветки из JSON-данных запроса
     branch_id = request.json.get('branch')
     branches_list = get_branches_list()
-    print(branch_id)
-    print(type(branch_id))
-    print(branches_list)
+
     # Проверяем, существует ли такая ветка
     if branch_id in branches_list:
         # Возвращаем список постов для данной ветки
