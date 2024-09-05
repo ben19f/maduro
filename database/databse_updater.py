@@ -1,4 +1,6 @@
+import datetime
 import json
+import time
 
 from peewee import SqliteDatabase, Model, AnyField, IntegerField, TextField, FloatField
 from config_data.config import database_location, api_tonconsole, main_branch_address, english_branch_address, spanish_branch_address, russian_branch_address
@@ -35,66 +37,94 @@ def create_branch_model(wishful_table_name):
 # EngBranch = create_branch_model('english_branch')
 # EspBranch = create_branch_model('spanish_branch')
 
-my_wallet = 'UQC6sXDfQ8lafiDiwQcW7u0Ec3-vqigVjaWvQO5qO61vXOPc'
 
+wallets_dict = {
+    'main_branch': main_branch_address,
+    'english_branch': english_branch_address,
+    'spanish_branch': spanish_branch_address,
+    'russian_branch': russian_branch_address
+}
 
-def get_messages_from_API(any_wallet: str):
+# wallets_list = list(wallets_dict.keys())
+# print(wallets_dict)
 
-
+def get_messages_from_API(any_wallet: str, list_of_posts = []):
     url = f"https://tonapi.io/v2/blockchain/accounts/{any_wallet}/transactions"
-# url = 'https://tonapi.io/v2/blockchain/masterchain-head'
+    # url = 'https://tonapi.io/v2/blockchain/masterchain-head'
     headers = {
         'Authorization': f'Bearer {api_tonconsole}'
     }
-
     response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        print(response.json())
-    else:
+    if response.status_code != 200:
         print(f"Error: {response.status_code}")
+    else:
 
-    post_num = 0
-    list_of_posts = []
-    # Преобразование ответа в словарь
-    data = response.json()
+        post_num = 0
 
-    # Получение элемента "transactions" из словаря
-    poluchil = data.get('transactions', None)
+        # Преобразование ответа в словарь
+        data = response.json()
+        # Получение элемента "transactions" из словаря
+        poluchil = data.get('transactions', None)
+        # print(poluchil)
+        for transaction in poluchil[::-1]:
+            if transaction['orig_status'] == "uninit" and transaction['end_status'] == "active":
+                pass
+            else:
+                if 'decoded_body' in transaction['in_msg'] and transaction['in_msg']['value'] != 0:
+                    post_num += 1
+                    # print(sender_name)
+                    post_dict = {
+                        'post_num': post_num,
+                        # 'sender_name': sending_timestamp,
+                        'amount_sent': transaction['in_msg']['value'],
+                        'text_message': transaction['in_msg']['decoded_body']['text'],
+                        'timestamp': transaction['utime'],
 
-    # print(poluchil)
+                        'sender_wallet': transaction['in_msg']['source']['address'],
+                        'transfer_hash': transaction['hash']
+                    }
+                    # Преобразование словаря в строку JSON с отступами
+                    # formatted_data = json.dumps(post_dict, indent=4, ensure_ascii=False)
+                    # Вывод на экран
+                    # print(formatted_data)
+                    list_of_posts.append(post_dict)
+        return list_of_posts
 
-    for transaction in poluchil[::-1]:
-        # print(transaction)
-        #
-        # print('предполагаем что он входящий')
-        # print('предполагаем что он правильный')
-        # if transaction['credit_phase']['credit'] != null_balance:
 
-        if transaction['orig_status'] == "uninit" and transaction['end_status'] == "active":
-            pass
+
+for wallet_name in list(wallets_dict.keys()):
+    # print(wallet)
+    list_messages = get_messages_from_API(wallets_dict[wallet_name], [])
+    time.sleep(2)
+    # print(list_messages)
+    for message_dict in list_messages:
+
+        # print(wallet_name)
+
+        BaseBranch = create_branch_model(wallet_name)
+        # formatted_data = json.dumps(message_dict, indent=4, ensure_ascii=False)
+        # Вывод на экран
+        # print(formatted_data)
+        # Проверяем, существует ли запись с указанными условиями
+        print(f'проверяю {message_dict["transfer_hash"]}')
+        existing_record = BaseBranch.get_or_none(
+            BaseBranch.transfer_hash == message_dict["transfer_hash"]
+        )
+
+        # Если запись не существует, создаем новую
+        if existing_record is None:
+            print()
+            BaseBranch.create(
+                post_num=message_dict["post_num"],
+                amount_sent=message_dict.get("amount_sent"),  # Используем значение из словаря или дефолтное
+                text_message=message_dict.get("text_message", ""),
+                timestamp=message_dict.get("timestamp"),
+                sender_wallet=message_dict["sender_wallet"],
+                transfer_hash=message_dict["transfer_hash"],
+                sender_name=message_dict.get("sender_name", ""),  # Значение по умолчанию, если не указано
+                black_list_message=message_dict.get("black_list_message", "")  # Значение по умолчанию
+            )
+            print("Запись добавлена в базу данных.")
         else:
-
-            if 'decoded_body' in transaction['in_msg'] and transaction['in_msg']['value'] != 0:
-                post_num += 1
-                # print(sender_name)
-                post_dict = {
-                    'post_num': post_num,
-                    # 'sender_name': sending_timestamp,
-                    'amount_sent': transaction['in_msg']['value'],
-                    'text_message': transaction['in_msg']['decoded_body']['text'],
-                    'timestamp': transaction['utime'],
-
-                    'sender_wallet': transaction['in_msg']['source']['address'],
-                    'transfer_hash': transaction['hash']
-
-                }
-                # Преобразование словаря в строку JSON с отступами
-                formatted_data = json.dumps(post_dict, indent=4, ensure_ascii=False)
-
-                # Вывод на экран
-                print(formatted_data)
-                list_of_posts.append(post_dict)
-
-
-get_messages_from_API(my_wallet)
+            print("Запись уже существует.")
