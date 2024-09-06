@@ -107,14 +107,14 @@ for wallet_name in list(wallets_dict.keys()):
         # Вывод на экран
         # print(formatted_data)
         # Проверяем, существует ли запись с указанными условиями
-        print(f'проверяю {message_dict["transfer_hash"]}')
+        # print(f'проверяю {message_dict["transfer_hash"]}')
         existing_record = BaseBranch.get_or_none(
             BaseBranch.transfer_hash == message_dict["transfer_hash"]
         )
 
         # Если запись не существует, создаем новую
         if existing_record is None:
-            print()
+            # print()
             BaseBranch.create(
                 post_num=message_dict["post_num"],
                 amount_sent=message_dict.get("amount_sent"),  # Используем значение из словаря или дефолтное
@@ -125,6 +125,7 @@ for wallet_name in list(wallets_dict.keys()):
                 sender_name=message_dict.get("sender_name", ""),  # Значение по умолчанию, если не указано
                 black_list_message=message_dict.get("black_list_message", "")  # Значение по умолчанию
             )
-            print("Запись добавлена в базу данных.")
+            # print("Запись добавлена в базу данных.")
         else:
-            print("Запись уже существует.")
+            pass
+            # print("Запись уже существует.")

@@ -44,24 +44,25 @@ def get_branches_list():
     tables = [row[0] for row in cursor.fetchall()]
     return tables
 
-def get_posts_from_branch(branch_id):
-    # Пример использования
-    start_row = 1  # Первая строка
-    end_row = 20  # Двадцатая строка
-    # Рассчитываем offset и limit
-    offset = start_row - 1  # Начало отсчета с 0
-    limit = end_row - start_row + 1  # Количество строк
-
+def get_posts_from_branch(branch_id, limit=20):
     DynamicBranchTable = create_branch_model(branch_id)
 
+    # Получаем общее количество записей
+    total_count = DynamicBranchTable.select().count()
+
+    # Рассчитываем offset
+    offset = max(total_count - limit, 0)
+
+    # Выполняем запрос с учетом вычисленного offset и limit
     query = (DynamicBranchTable
              .select()
+             .order_by(DynamicBranchTable.id.desc())  # Сортировка по убыванию ID
              .offset(offset)
              .limit(limit)
              .dicts())  # Преобразует записи в словари
+
     # Преобразуем результат запроса в список словарей
     list_for_users = list(query)
-    list_for_users = list_for_users[::-1]
     for transaction in list_for_users:
         if 'amount_sent' in transaction:
             transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
@@ -69,3 +70,4 @@ def get_posts_from_branch(branch_id):
             transaction['timestamp'] = transaction['timestamp'] * 1000
 
     return list_for_users
+
