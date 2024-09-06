@@ -54,7 +54,8 @@ def get_messages_from_API(any_wallet: str, list_of_posts = []):
     headers = {
         'Authorization': f'Bearer {api_tonconsole}'
     }
-    response = requests.get(url, headers=headers)
+    # response = requests.get(url, headers=headers)
+    response = requests.get(url)
 
     if response.status_code != 200:
         print(f"Error: {response.status_code}")
@@ -122,8 +123,8 @@ for wallet_name in list(wallets_dict.keys()):
                 timestamp=message_dict.get("timestamp"),
                 sender_wallet=message_dict["sender_wallet"],
                 transfer_hash=message_dict["transfer_hash"],
-                sender_name=message_dict.get("sender_name", ""),  # Значение по умолчанию, если не указано
-                black_list_message=message_dict.get("black_list_message", "")  # Значение по умолчанию
+                sender_name=message_dict.get("sender_name")  or "UnknownSender",  # Значение по умолчанию, если не указано
+                black_list_message=message_dict.get("black_list_message")   or False  # Значение по умолчанию
             )
             # print("Запись добавлена в базу данных.")
         else:
