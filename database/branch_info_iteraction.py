@@ -44,30 +44,49 @@ def get_branches_list():
     tables = [row[0] for row in cursor.fetchall()]
     return tables
 
-def get_posts_from_branch(branch_id, limit=20):
+
+# def get_posts_from_branch(branch_id, limit=20):
+#     DynamicBranchTable = create_branch_model(branch_id)
+#
+#     # Получаем все записи в порядке убывания ID
+#     query = (DynamicBranchTable
+#              .select()
+#              .order_by(DynamicBranchTable.id.desc())  # Сортировка по убыванию ID
+#              .limit(limit)
+#              .dicts())  # Преобразует записи в словари
+#
+#     # Преобразуем результат запроса в список словарей и переворачиваем его
+#     list_for_users = list(query)
+#     list_for_users = list_for_users[::-1]  # Переворачиваем список для получения последних записей в исходном порядке
+#
+#     for transaction in list_for_users:
+#         if 'amount_sent' in transaction:
+#             transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
+#         if 'timestamp' in transaction:
+#             transaction['timestamp'] = transaction['timestamp'] * 1000
+#
+#     list_for_users= list_for_users[::-1]
+#     return list_for_users
+
+# 0000000000000000000000000000000000
+def get_posts_from_branch(branch_id, last_post_id=None, limit=20):
     DynamicBranchTable = create_branch_model(branch_id)
 
-    # Получаем общее количество записей
-    total_count = DynamicBranchTable.select().count()
+    query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())  # Сортировка по ID
 
-    # Рассчитываем offset
-    offset = max(total_count - limit, 0)
+    if last_post_id:
+        last_post_id = int(last_post_id)
+        query = query.where(DynamicBranchTable.id < last_post_id)
 
-    # Выполняем запрос с учетом вычисленного offset и limit
-    query = (DynamicBranchTable
-             .select()
-             .order_by(DynamicBranchTable.id.desc())  # Сортировка по убыванию ID
-             .offset(offset)
-             .limit(limit)
-             .dicts())  # Преобразует записи в словари
+    query = query.limit(limit).dicts()
 
-    # Преобразуем результат запроса в список словарей
     list_for_users = list(query)
+
     for transaction in list_for_users:
         if 'amount_sent' in transaction:
             transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
         if 'timestamp' in transaction:
-            transaction['timestamp'] = transaction['timestamp'] * 1000
+            transaction['timestamp'] = transaction['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
 
     return list_for_users
 
