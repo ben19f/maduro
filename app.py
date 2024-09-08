@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from database.branch_info_iteraction import get_branches_list, get_posts_from_branch
+from database.branch_info_iteraction import get_branches_list, get_posts_from_branch, get_post_data, get_comments
 app = Flask(__name__)
 CORS(app)
 
@@ -17,7 +17,35 @@ def index2():
 
 @app.route('/get_comments')
 def index3():
-    return "тут я выдаю по порядку комментарии для отображения"
+    # Извлекаем параметр 'name' из GET-запроса
+    branch_id = request.args.get('branchId')  # Второй аргумент - значение по умолчанию, если параметр не передан
+    post_num = int(request.args.get('post_num'))
+    last_comment = request.args.get('lastCommentId')
+    print(f'получил из запроса коммента {branch_id}--{post_num}')
+    # comments_list = [{
+    #     'id': 1,
+    #     'comment_id': 1,
+    #     'post_id': 2,
+    #     'post_branch': 2,
+    #     'comment_text': 2222222222222222222222222222222222222222,
+    #     'user_name': 2,
+    #     'timestamp': 2,
+    #     'user_foto': 2,
+    #     'user_id': 2,
+    # }, {
+    #     'id': 2,
+    #     'comment_id': 2,
+    #     'post_id': 2,
+    #     'post_branch': 2,
+    #     'comment_text': 333333333333333333333333333333333333,
+    #     'user_name': 2,
+    #     'timestamp': 2,
+    #     'user_foto': 2,
+    #     'user_id': 2,
+    # }]
+    comments_list = get_comments(branch_id, post_num, last_comment)
+    print(comments_list)
+    return comments_list
 
 @app.route('/post_reg_user')
 def index4():
@@ -43,7 +71,7 @@ def index8():
 
 @app.route('/get_posts', methods=['POST'])
 def get_posts():
-    print(request.json)
+    # print(request.json)
     branch_id = request.json.get('branch')
     last_post_id = request.json.get('last_id')
     limit = 20
@@ -57,6 +85,25 @@ def get_posts():
         return jsonify([]), 404
 
 
+@app.route('/get_post_for_comment', methods=['GET'])
+def get_post():
+    # Извлекаем параметр 'name' из GET-запроса
+    branch_id = request.args.get('branchId')  # Второй аргумент - значение по умолчанию, если параметр не передан
+    post_num = request.args.get('post_num')
+    # post_for_print = {
+    #     'id': '2',
+    #     'post_num': '2',
+    #     'sender_name': 'ANONYM',
+    #     'amount_sent': '2',
+    #     'text_message': 'Этот пост мы сецчас обсудим',
+    #     'timestamp': '7777777',
+    #     'black_list_message': 'False',
+    #     'sender_wallet': '888888888888',
+    #     'transfer_hash': '9999999999999999'
+    # }
+    post_for_print = get_post_data(branch_id, post_num)
+    # print(f'получил вводные данные пост{post_num}, ветка{branch_id}')
+    return jsonify(post_for_print)
 
 
 if __name__ == '__main__':

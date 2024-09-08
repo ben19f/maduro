@@ -5,6 +5,22 @@ from config_data.config import database_location
 db = SqliteDatabase(f'{database_location}/maduro_first.db')
 
 
+class CommentsTab(Model):
+    comment_id = IntegerField()
+    post_num = IntegerField()
+    post_branch = TextField()
+    comment_text = TextField()
+    user_name = TextField()
+    timestamp = IntegerField()
+    user_foto = TextField()
+    user_id = IntegerField()
+
+    class Meta:
+        database = db
+        table_name = 'comments_1'
+
+
+
 class BaseBranch(Model):
     post_num = IntegerField()
     sender_name = TextField()
@@ -90,3 +106,74 @@ def get_posts_from_branch(branch_id, last_post_id=None, limit=20):
 
     return list_for_users
 
+
+
+def get_post_data(branch_id, post_num):
+    DynamicBranchTable = create_branch_model(branch_id)
+    # Выполняем запрос к БД с фильтрацией по post_num
+    query = DynamicBranchTable.select().where(DynamicBranchTable.post_num == post_num)
+
+    for record in query:
+        amount = record.amount_sent / 1000000000
+        timestamp = record.timestamp * 1000
+        result = {
+        'id': record.id,
+        'post_num': record.post_num,
+        'sender_name': record.sender_name,
+        'amount_sent': amount,
+        'text_message': record.text_message,
+        'timestamp': timestamp,
+        'black_list_message': record.black_list_message,
+        'sender_wallet': record.sender_wallet,
+        'transfer_hash': record.transfer_hash
+    }
+    return result
+
+def get_comments(branch_id, post_num, last_comment_id=None, limit=20):
+    print('function')
+    print(branch_id, post_num, last_comment_id, limit)
+    print(type(branch_id), type(post_num), type(last_comment_id), type(limit))
+    # Запрос для получения последних комментариев по post_num и branch_id
+    query = CommentsTab.select().where(
+        (CommentsTab.post_num == post_num) &
+        (CommentsTab.post_branch == branch_id)
+    ).order_by(CommentsTab.comment_id.desc())  # Сортировка по убыванию comment_id
+
+    # Если передан last_comment_id, фильтруем запрос, чтобы получить комментарии с меньшим ID
+    if last_comment_id:
+        last_comment_id = int(last_comment_id)
+        query = query.where(CommentsTab.comment_id < last_comment_id)
+
+    # Ограничиваем количество комментариев
+    query = query.limit(limit).dicts()
+
+    # Преобразуем результат в список словарей
+    comments_list = list(query)
+
+    # # Преобразуем timestamp (если это нужно) в миллисекунды
+    # for comment in comments_list:
+    #     if 'timestamp' in comment:
+    #         comment['timestamp'] = comment['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
+
+    result_list = []
+    for record in comments_list:
+        print(record['timestamp'])
+        print(type(record['timestamp']))
+        timestamp = int(record['timestamp']) * 1000
+
+        result = {
+        'comment_id': record['comment_id'],
+        'post_id': record['post_num'],
+        'post_branch': record['post_branch'],
+        'comment_text': record['comment_text'],
+        'user_name': record['user_name'],
+        'timestamp': timestamp,
+        'user_foto': record['user_foto'],
+        'user_id': record['user_id'],
+        }
+        result_list.append(result)
+    # print(result_list)
+    return result_list
+
+
+# get_comments('english_branch', 1, last_comment_id=None, limit=20)
