@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from database.branch_info_iteraction import get_branches_list, get_posts_from_branch, get_post_data, get_comments
+from database.branch_info_iteraction import get_branches_list, get_posts_from_branch, get_post_data, get_comments, add_comment
 app = Flask(__name__)
 CORS(app)
 
@@ -21,30 +21,8 @@ def index3():
     branch_id = request.args.get('branchId')  # Второй аргумент - значение по умолчанию, если параметр не передан
     post_num = int(request.args.get('post_num'))
     last_comment = request.args.get('lastCommentId')
-    print(f'получил из запроса коммента {branch_id}--{post_num}')
-    # comments_list = [{
-    #     'id': 1,
-    #     'comment_id': 1,
-    #     'post_id': 2,
-    #     'post_branch': 2,
-    #     'comment_text': 2222222222222222222222222222222222222222,
-    #     'user_name': 2,
-    #     'timestamp': 2,
-    #     'user_foto': 2,
-    #     'user_id': 2,
-    # }, {
-    #     'id': 2,
-    #     'comment_id': 2,
-    #     'post_id': 2,
-    #     'post_branch': 2,
-    #     'comment_text': 333333333333333333333333333333333333,
-    #     'user_name': 2,
-    #     'timestamp': 2,
-    #     'user_foto': 2,
-    #     'user_id': 2,
-    # }]
     comments_list = get_comments(branch_id, post_num, last_comment)
-    print(comments_list)
+    # print(comments_list)
     return comments_list
 
 @app.route('/post_reg_user')
@@ -105,6 +83,21 @@ def get_post():
     # print(f'получил вводные данные пост{post_num}, ветка{branch_id}')
     return jsonify(post_for_print)
 
+
+@app.route('/add_comment', methods=['POST'])
+def push_comment_to_db():
+    # print(request.json)
+    branch_id = request.json.get('branch_id')
+    # print(branch_id)
+    post_num = request.json.get('post_num')
+    sender_name = request.json.get('sender_name')
+    comment_text = request.json.get('comment_text')
+    # print(comment_text, '---', sender_name, '---', post_num, '---', branch_id)
+    if add_comment(branch_id, post_num, sender_name, comment_text):
+        return jsonify({
+            "success": True,
+            "message": "Комментарий успешно добавлен"
+        })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=25400)

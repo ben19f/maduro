@@ -1,6 +1,6 @@
-from peewee import SqliteDatabase, Model, AnyField, IntegerField, TextField, FloatField
+from peewee import SqliteDatabase, Model, AnyField, IntegerField, TextField, FloatField, fn
 from config_data.config import database_location
-
+import time
 
 db = SqliteDatabase(f'{database_location}/maduro_first.db')
 
@@ -177,3 +177,33 @@ def get_comments(branch_id, post_num, last_comment_id=None, limit=20):
 
 
 # get_comments('english_branch', 1, last_comment_id=None, limit=20)
+
+
+def add_comment(branch_id, post_num, sender_name, comment_text, user_id = 0, user_foto = 'poka_net'):
+    # Находим максимальный comment_id для указанного post_num и branch_id
+    max_comment_id = CommentsTab.select(fn.MAX(CommentsTab.comment_id)).where(
+        (CommentsTab.post_num == post_num) &
+        (CommentsTab.post_branch == branch_id)
+    ).scalar()
+
+    # Если таких комментариев нет, начинаем с 1
+    if max_comment_id is None:
+        new_comment_id = 1
+    else:
+        new_comment_id = max_comment_id + 1
+
+    # print(branch_id)
+    # Добавляем новый комментарий в таблицу
+    new_comment = CommentsTab.create(
+        comment_id=new_comment_id,
+        post_num=post_num,
+        post_branch=branch_id,
+        comment_text=comment_text,
+        user_name=sender_name,
+        timestamp=int(time.time()),  # Генерируем текущее время в секундах
+        user_foto=user_foto,
+        user_id=user_id
+    )
+
+    # Возвращаем созданный комментарий (или его ID)
+    return True
