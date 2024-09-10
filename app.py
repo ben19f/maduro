@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
 from database.branch_info_iteraction import get_branches_list, get_posts_from_branch, get_post_data, get_comments, add_comment
+from outside_iteraction.api_cheker import check_api_key
 app = Flask(__name__)
 CORS(app)
 
@@ -86,18 +87,21 @@ def get_post():
 
 @app.route('/add_comment', methods=['POST'])
 def push_comment_to_db():
-    # print(request.json)
-    branch_id = request.json.get('branch_id')
-    # print(branch_id)
-    post_num = request.json.get('post_num')
-    sender_name = request.json.get('sender_name')
-    comment_text = request.json.get('comment_text')
-    # print(comment_text, '---', sender_name, '---', post_num, '---', branch_id)
-    if add_comment(branch_id, post_num, sender_name, comment_text):
-        return jsonify({
-            "success": True,
-            "message": "Комментарий успешно добавлен"
-        })
+    if check_api_key('add_comment', request.headers.get('Authorization')) == False:
+        abort(401, description="Unauthorized: Invalid API key")
+    else:
+        # print(request.json)
+        branch_id = request.json.get('branch_id')
+        # print(branch_id)
+        post_num = request.json.get('post_num')
+        sender_name = request.json.get('sender_name')
+        comment_text = request.json.get('comment_text')
+        # print(comment_text, '---', sender_name, '---', post_num, '---', branch_id)
+        if add_comment(branch_id, post_num, sender_name, comment_text):
+            return jsonify({
+                "success": True,
+                "message": "Комментарий успешно добавлен"
+            })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=25400)
