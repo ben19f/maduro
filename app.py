@@ -87,6 +87,7 @@ def get_post():
 
 @app.route('/add_comment', methods=['POST'])
 def push_comment_to_db():
+    # print(request.headers.get('Authorization'))
     if check_api_key('add_comment', request.headers.get('Authorization')) == False:
         abort(401, description="Unauthorized: Invalid API key")
     else:
@@ -94,7 +95,7 @@ def push_comment_to_db():
         branch_id = request.json.get('branch_id')
         # print(branch_id)
         post_num = request.json.get('post_num')
-        sender_name = request.json.get('sender_name')
+        sender_name = request.json.get('user_name')
         comment_text = request.json.get('comment_text')
         # print(comment_text, '---', sender_name, '---', post_num, '---', branch_id)
         if add_comment(branch_id, post_num, sender_name, comment_text):

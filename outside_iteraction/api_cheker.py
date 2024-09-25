@@ -13,6 +13,7 @@ api_keys_dict = {
 
 def check_api_key(function_name, api_key):
     try_key = api_keys_dict[f'{function_name}']
+    print(try_key)
     if api_key != try_key:
         return False
 

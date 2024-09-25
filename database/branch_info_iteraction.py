@@ -30,6 +30,8 @@ class BaseBranch(Model):
     black_list_message = TextField()
     sender_wallet = TextField()
     transfer_hash = TextField()
+    total_comments = IntegerField()
+    last_comment_date = IntegerField()
 
     class Meta:
         database = db
@@ -43,67 +45,30 @@ def create_branch_model(wishful_table_name):
             table_name = wishful_table_name
     return Branch
 
-# Создаем модели для каждой ветки
-# MainBranch = create_branch_model('main_branch')
-# RusBranch = create_branch_model('russian_branch')
-# EngBranch = create_branch_model('english_branch')
-# EspBranch = create_branch_model('spanish_branch')
-
 
 def get_branches_list():
-    # anylist = ["main_branch", "russian_branch", "english_branch", "spanish_branch"]
-    # SQL-запрос для получения списка таблиц
     query = "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_branch';"
-
-    # Выполнение запроса через peewee
     cursor = db.execute_sql(query)
     tables = [row[0] for row in cursor.fetchall()]
     return tables
 
 
-# def get_posts_from_branch(branch_id, limit=20):
-#     DynamicBranchTable = create_branch_model(branch_id)
-#
-#     # Получаем все записи в порядке убывания ID
-#     query = (DynamicBranchTable
-#              .select()
-#              .order_by(DynamicBranchTable.id.desc())  # Сортировка по убыванию ID
-#              .limit(limit)
-#              .dicts())  # Преобразует записи в словари
-#
-#     # Преобразуем результат запроса в список словарей и переворачиваем его
-#     list_for_users = list(query)
-#     list_for_users = list_for_users[::-1]  # Переворачиваем список для получения последних записей в исходном порядке
-#
-#     for transaction in list_for_users:
-#         if 'amount_sent' in transaction:
-#             transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
-#         if 'timestamp' in transaction:
-#             transaction['timestamp'] = transaction['timestamp'] * 1000
-#
-#     list_for_users= list_for_users[::-1]
-#     return list_for_users
-
-# 0000000000000000000000000000000000
 def get_posts_from_branch(branch_id, last_post_id=None, limit=20):
     DynamicBranchTable = create_branch_model(branch_id)
-
-    query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())  # Сортировка по ID
-
+    query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())
     if last_post_id:
         last_post_id = int(last_post_id)
         query = query.where(DynamicBranchTable.id < last_post_id)
-
     query = query.limit(limit).dicts()
-
     list_for_users = list(query)
-
     for transaction in list_for_users:
         if 'amount_sent' in transaction:
             transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
         if 'timestamp' in transaction:
             transaction['timestamp'] = transaction['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
-
+        if 'black_list_message' in transaction:
+            if transaction['black_list_message'] == 'True':
+                transaction['text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
     return list_for_users
 
 
@@ -125,14 +90,20 @@ def get_post_data(branch_id, post_num):
         'timestamp': timestamp,
         'black_list_message': record.black_list_message,
         'sender_wallet': record.sender_wallet,
-        'transfer_hash': record.transfer_hash
+        'transfer_hash': record.transfer_hash,
+        'total_comments': record.total_comments
     }
+
+        if result['black_list_message'] == 'True':
+            result[
+                'text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
+
     return result
 
 def get_comments(branch_id, post_num, last_comment_id=None, limit=20):
-    print('function')
-    print(branch_id, post_num, last_comment_id, limit)
-    print(type(branch_id), type(post_num), type(last_comment_id), type(limit))
+    # print('function')
+    # print(branch_id, post_num, last_comment_id, limit)
+    # print(type(branch_id), type(post_num), type(last_comment_id), type(limit))
     # Запрос для получения последних комментариев по post_num и branch_id
     query = CommentsTab.select().where(
         (CommentsTab.post_num == post_num) &
@@ -149,12 +120,6 @@ def get_comments(branch_id, post_num, last_comment_id=None, limit=20):
 
     # Преобразуем результат в список словарей
     comments_list = list(query)
-
-    # # Преобразуем timestamp (если это нужно) в миллисекунды
-    # for comment in comments_list:
-    #     if 'timestamp' in comment:
-    #         comment['timestamp'] = comment['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
-
     result_list = []
     for record in comments_list:
         print(record['timestamp'])
@@ -172,14 +137,14 @@ def get_comments(branch_id, post_num, last_comment_id=None, limit=20):
         'user_id': record['user_id'],
         }
         result_list.append(result)
-    # print(result_list)
+
     return result_list
 
 
-# get_comments('english_branch', 1, last_comment_id=None, limit=20)
 
 
 def add_comment(branch_id, post_num, sender_name, comment_text, user_id = 0, user_foto = 'poka_net'):
+    current_time = int(time.time())
     # Находим максимальный comment_id для указанного post_num и branch_id
     max_comment_id = CommentsTab.select(fn.MAX(CommentsTab.comment_id)).where(
         (CommentsTab.post_num == post_num) &
@@ -192,18 +157,30 @@ def add_comment(branch_id, post_num, sender_name, comment_text, user_id = 0, use
     else:
         new_comment_id = max_comment_id + 1
 
-    # print(branch_id)
-    # Добавляем новый комментарий в таблицу
+
     new_comment = CommentsTab.create(
         comment_id=new_comment_id,
         post_num=post_num,
         post_branch=branch_id,
         comment_text=comment_text,
         user_name=sender_name,
-        timestamp=int(time.time()),  # Генерируем текущее время в секундах
+        timestamp=current_time,  # Генерируем текущее время в секундах
         user_foto=user_foto,
         user_id=user_id
     )
+    # Создаем динамическую модель таблицы
+    DynamicBranchTable = create_branch_model(branch_id)
 
+
+    # Находим строку с нужным post_num
+    record = DynamicBranchTable.get(DynamicBranchTable.post_num == post_num)
+
+    # Увеличиваем поле total_comments на 1
+    record.total_comments += 1
+    print(current_time)
+    record.last_comment_date = current_time
+
+    # Сохраняем изменения
+    record.save()
     # Возвращаем созданный комментарий (или его ID)
     return True

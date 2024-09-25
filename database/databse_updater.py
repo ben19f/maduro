@@ -18,6 +18,7 @@ class BaseBranch(Model):
     black_list_message = TextField()
     sender_wallet = TextField()
     transfer_hash = TextField()
+    total_comments = IntegerField()
 
     class Meta:
         database = db
@@ -124,7 +125,8 @@ for wallet_name in list(wallets_dict.keys()):
                 sender_wallet=message_dict["sender_wallet"],
                 transfer_hash=message_dict["transfer_hash"],
                 sender_name=message_dict.get("sender_name")  or "UnknownSender",  # Значение по умолчанию, если не указано
-                black_list_message=message_dict.get("black_list_message")   or False  # Значение по умолчанию
+                black_list_message=message_dict.get("black_list_message")   or False,  # Значение по умолчанию
+                total_comments = 0
             )
             # print("Запись добавлена в базу данных.")
         else:
