@@ -53,6 +53,16 @@ def get_posts():
     # print(request.json)
     branch_id = request.json.get('branch')
     last_post_id = request.json.get('last_id')
+    amount_from = request.json.get('branch')
+    amount_to = request.json.get('last_id')
+    date_from = request.json.get('branch')
+    date_to = request.json.get('last_id')
+    post_sender = request.json.get('branch')
+    post_hash = request.json.get('last_id')
+
+
+
+
     limit = 20
 
     branches_list = get_branches_list()
