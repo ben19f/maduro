@@ -53,23 +53,58 @@ def get_branches_list():
     return tables
 
 
-def get_posts_from_branch(branch_id, last_post_id=None, limit=20):
+
+
+def get_post_using_hash(branch_id, post_hash):
+    """получаю из таблицы пост по хешу если он есть"""
     DynamicBranchTable = create_branch_model(branch_id)
-    query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())
-    if last_post_id:
-        last_post_id = int(last_post_id)
-        query = query.where(DynamicBranchTable.id < last_post_id)
-    query = query.limit(limit).dicts()
-    list_for_users = list(query)
-    for transaction in list_for_users:
-        if 'amount_sent' in transaction:
-            transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
-        if 'timestamp' in transaction:
-            transaction['timestamp'] = transaction['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
-        if 'black_list_message' in transaction:
-            if transaction['black_list_message'] == 'True':
-                transaction['text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
-    return list_for_users
+    query = DynamicBranchTable.select().where(DynamicBranchTable.transfer_hash == post_hash).order_by(DynamicBranchTable.id.desc()).first()
+    if query:
+        return query.__data__
+
+
+def check_filters(amount_from=None, amount_to=None,date_from=None, date_to=None)
+
+def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amount_to=None, date_from=None, date_to=None, post_sender=None, post_hash=None, site_version=None, user_age=None, min_post_id=None, max_post_id=None):
+    # print(branch_id, last_post_id, amount_from, amount_to, date_from, date_to, post_sender, post_hash, site_version, user_age, min_post_id, max_post_id, limit)
+    # print("вот")
+    # print(post_hash)
+    # print(type(post_hash))
+    # print("вот")
+    if post_hash:
+        post = get_post_using_hash(branch_id, post_hash)
+        if anypost:
+            return [anypost]
+        else:
+            return [{'id': 1000,
+             'post_num': 1000,
+             'sender_name': 'ТехникМадуро',
+             'amount_sent': 0,
+             'text_message': 'Такого поста в этой ветке нету',
+             'timestamp': time.time(),
+            'black_list_message': 'False',
+             'sender_wallet': 'это не валет',
+             'transfer_hash': 'у этого сообщения нету хеша',
+             'total_comments': 0,
+             'last_comment_date': 0}]
+    else:
+        DynamicBranchTable = create_branch_model(branch_id)
+        query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())
+        if last_post_id:
+            last_post_id = int(last_post_id)
+            query = query.where(DynamicBranchTable.id < last_post_id)
+        query = query.limit(limit).dicts()
+        list_for_users = list(query)
+        for transaction in list_for_users:
+            if 'amount_sent' in transaction:
+                transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
+            if 'timestamp' in transaction:
+                transaction['timestamp'] = transaction['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
+            if 'black_list_message' in transaction:
+                if transaction['black_list_message'] == 'True':
+                    transaction['text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
+        print(list_for_users[0])
+        return list_for_users
 
 
 
@@ -122,8 +157,8 @@ def get_comments(branch_id, post_num, last_comment_id=None, limit=20):
     comments_list = list(query)
     result_list = []
     for record in comments_list:
-        print(record['timestamp'])
-        print(type(record['timestamp']))
+        # print(record['timestamp'])
+        # print(type(record['timestamp']))
         timestamp = int(record['timestamp']) * 1000
 
         result = {
