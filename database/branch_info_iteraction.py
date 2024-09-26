@@ -55,58 +55,64 @@ def get_branches_list():
 
 
 
-def get_post_using_hash(branch_id, post_hash):
-    """получаю из таблицы пост по хешу если он есть"""
-    DynamicBranchTable = create_branch_model(branch_id)
-    query = DynamicBranchTable.select().where(DynamicBranchTable.transfer_hash == post_hash).order_by(DynamicBranchTable.id.desc()).first()
-    if query:
-        return query.__data__
+# def get_post_using_hash(branch_id, post_hash):
+#     """получаю из таблицы пост по хешу если он есть"""
+#     DynamicBranchTable = create_branch_model(branch_id)
+#     query = DynamicBranchTable.select().where(DynamicBranchTable.transfer_hash == post_hash).order_by(DynamicBranchTable.id.desc()).first()
+#     if query:
+#         return query.__data__
 
 
-def check_filters(amount_from=None, amount_to=None,date_from=None, date_to=None)
+# def check_filters(amount_from=None, amount_to=None,date_from=None, date_to=None)
 
 def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amount_to=None, date_from=None, date_to=None, post_sender=None, post_hash=None, site_version=None, user_age=None, min_post_id=None, max_post_id=None):
-    # print(branch_id, last_post_id, amount_from, amount_to, date_from, date_to, post_sender, post_hash, site_version, user_age, min_post_id, max_post_id, limit)
-    # print("вот")
-    # print(post_hash)
-    # print(type(post_hash))
-    # print("вот")
-    if post_hash:
-        post = get_post_using_hash(branch_id, post_hash)
-        if anypost:
-            return [anypost]
-        else:
-            return [{'id': 1000,
-             'post_num': 1000,
-             'sender_name': 'ТехникМадуро',
-             'amount_sent': 0,
-             'text_message': 'Такого поста в этой ветке нету',
-             'timestamp': time.time(),
-            'black_list_message': 'False',
-             'sender_wallet': 'это не валет',
-             'transfer_hash': 'у этого сообщения нету хеша',
-             'total_comments': 0,
-             'last_comment_date': 0}]
-    else:
-        DynamicBranchTable = create_branch_model(branch_id)
-        query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())
-        if last_post_id:
-            last_post_id = int(last_post_id)
-            query = query.where(DynamicBranchTable.id < last_post_id)
-        query = query.limit(limit).dicts()
-        list_for_users = list(query)
-        for transaction in list_for_users:
-            if 'amount_sent' in transaction:
-                transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
-            if 'timestamp' in transaction:
-                transaction['timestamp'] = transaction['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
-            if 'black_list_message' in transaction:
-                if transaction['black_list_message'] == 'True':
-                    transaction['text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
-        print(list_for_users[0])
-        return list_for_users
+    DynamicBranchTable = create_branch_model(branch_id)
+    # Создаем запрос с фильтрами
+    query = DynamicBranchTable.select()
+    # Добавляем условия по id
+    if min_post_id is not None:
+        query = query.where(DynamicBranchTable.id >= min_post_id)
 
+    if max_post_id is not None:
+        query = query.where(DynamicBranchTable.id <= max_post_id)
 
+    # Добавляем условия по timestamp
+    if date_from is not None:
+        query = query.where(DynamicBranchTable.timestamp >= date_from)
+    if date_to is not None:
+        query = query.where(DynamicBranchTable.timestamp <= date_to)
+
+    # Добавляем условия по sum
+    if amount_from is not None:
+        query = query.where(DynamicBranchTable.amount_sent >= amount_from)
+    if amount_to is not None:
+        query = query.where(DynamicBranchTable.amount_sent <= amount_to)
+
+    # Добавляем условие для sender
+    if post_sender is not None:
+        query = query.where(DynamicBranchTable.sender_wallet == post_sender)
+
+    # Добавляем условие для hash
+    if post_hash is not None:
+        query = query.where(DynamicBranchTable.transfer_hash == post_hash)
+
+    list_for_users = list(query)
+    for transaction in list_for_users:
+        if 'amount_sent' in transaction:
+            transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
+        if 'timestamp' in transaction:
+            transaction['timestamp'] = transaction['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
+        if 'black_list_message' in transaction:
+            if transaction['black_list_message'] == 'True':
+                transaction['text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
+    print(list_for_users[0])
+    return list_for_users
+
+ # query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())
+ #    if last_post_id:
+ #        last_post_id = int(last_post_id)
+ #        query = query.where(DynamicBranchTable.id < last_post_id)
+ #    query = query.limit(limit).dicts()
 
 def get_post_data(branch_id, post_num):
     DynamicBranchTable = create_branch_model(branch_id)
