@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from peewee import SqliteDatabase, Model, AnyField, IntegerField, TextField, FloatField, fn
 from config_data.config import database_location
 import time
@@ -65,10 +67,30 @@ def get_branches_list():
 
 # def check_filters(amount_from=None, amount_to=None,date_from=None, date_to=None)
 
-def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amount_to=None, date_from=None, date_to=None, post_sender=None, post_hash=None, site_version=None, user_age=None, min_post_id=None, max_post_id=None):
+def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amount_to=None, date_from=None,
+                   date_to=None, post_sender=None, post_hash=None, site_version=None, user_age=None, min_post_id=None,
+                   max_post_id=None):
+
+    print(branch_id, last_post_id, limit, amount_from, amount_to, date_from,
+                   date_to, post_sender, post_hash, site_version, user_age, min_post_id,
+                   max_post_id)
+    print(amount_from)
+    print(amount_to)
+
+    # Преобразование строки в объект datetime
+    date_from = datetime.strptime(date_from, '%Y-%m-%d')
+    date_to = datetime.strptime(date_to, '%Y-%m-%d')
+    # Преобразование объекта datetime в timestamp (в секундах)
+    date_from = int(date_from.timestamp())
+    date_to = int(date_to.timestamp())
+
+
+
     DynamicBranchTable = create_branch_model(branch_id)
+
     # Создаем запрос с фильтрами
     query = DynamicBranchTable.select()
+
     # Добавляем условия по id
     if min_post_id is not None:
         query = query.where(DynamicBranchTable.id >= min_post_id)
@@ -79,24 +101,36 @@ def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amo
     # Добавляем условия по timestamp
     if date_from is not None:
         query = query.where(DynamicBranchTable.timestamp >= date_from)
+
     if date_to is not None:
         query = query.where(DynamicBranchTable.timestamp <= date_to)
 
-    # Добавляем условия по sum
+    # Добавляем условия по сумме
     if amount_from is not None:
         query = query.where(DynamicBranchTable.amount_sent >= amount_from)
+
     if amount_to is not None:
         query = query.where(DynamicBranchTable.amount_sent <= amount_to)
 
     # Добавляем условие для sender
-    if post_sender is not None:
+    if post_sender:
         query = query.where(DynamicBranchTable.sender_wallet == post_sender)
 
     # Добавляем условие для hash
-    if post_hash is not None:
+    if post_hash:
         query = query.where(DynamicBranchTable.transfer_hash == post_hash)
 
-    list_for_users = list(query)
+
+
+    # Устанавливаем пагинацию
+
+    if last_post_id:
+        query = query.where(DynamicBranchTable.id > last_post_id)  # Получаем посты с id больше, чем last_post_id
+
+    query = query.order_by(DynamicBranchTable.id).limit(limit)  # Ограничиваем до limit постов
+
+    # Используем dicts() для получения результата в виде списка словарей
+    list_for_users = list(query.dicts())
     for transaction in list_for_users:
         if 'amount_sent' in transaction:
             transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
@@ -104,11 +138,13 @@ def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amo
             transaction['timestamp'] = transaction['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
         if 'black_list_message' in transaction:
             if transaction['black_list_message'] == 'True':
-                transaction['text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
-    print(list_for_users[0])
+                transaction[
+                    'text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
+    # print(list_for_users)  # Изменил на вывод всех постов для лучшего понимания
     return list_for_users
 
- # query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())
+
+# query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())
  #    if last_post_id:
  #        last_post_id = int(last_post_id)
  #        query = query.where(DynamicBranchTable.id < last_post_id)
