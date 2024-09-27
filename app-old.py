@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from database.branch_info_iteraction import get_branches_list, get_posts_from_branch
+from database.branch_info_iteraction import get_branches_list, get_posts_list
 app = Flask(__name__)
 CORS(app)
 
@@ -26,7 +26,7 @@ def get_posts():
     # Проверяем, существует ли такая ветка
     if branch_id in branches_list:
         # Возвращаем список постов для данной ветки
-        posts_for_print = get_posts_from_branch(branch_id)
+        posts_for_print = get_posts_list(branch_id)
         return jsonify(posts_for_print)
     else:
         # Если ветка не найдена, возвращаем пустой список с кодом 404
