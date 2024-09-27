@@ -55,36 +55,17 @@ def get_branches_list():
     return tables
 
 
+from datetime import datetime
 
-
-# def get_post_using_hash(branch_id, post_hash):
-#     """получаю из таблицы пост по хешу если он есть"""
-#     DynamicBranchTable = create_branch_model(branch_id)
-#     query = DynamicBranchTable.select().where(DynamicBranchTable.transfer_hash == post_hash).order_by(DynamicBranchTable.id.desc()).first()
-#     if query:
-#         return query.__data__
-
-
-# def check_filters(amount_from=None, amount_to=None,date_from=None, date_to=None)
 
 def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amount_to=None, date_from=None,
                    date_to=None, post_sender=None, post_hash=None, site_version=None, user_age=None, min_post_id=None,
                    max_post_id=None):
-
-    print(branch_id, last_post_id, limit, amount_from, amount_to, date_from,
-                   date_to, post_sender, post_hash, site_version, user_age, min_post_id,
-                   max_post_id)
-    print(amount_from)
-    print(amount_to)
-
     # Преобразование строки в объект datetime
-    date_from = datetime.strptime(date_from, '%Y-%m-%d')
-    date_to = datetime.strptime(date_to, '%Y-%m-%d')
-    # Преобразование объекта datetime в timestamp (в секундах)
-    date_from = int(date_from.timestamp())
-    date_to = int(date_to.timestamp())
-
-
+    if date_from:
+        date_from = int(datetime.strptime(date_from, '%Y-%m-%d').timestamp())
+    if date_to:
+        date_to = int(datetime.strptime(date_to, '%Y-%m-%d').timestamp())
 
     DynamicBranchTable = create_branch_model(branch_id)
 
@@ -94,29 +75,19 @@ def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amo
     # Добавляем условия по id
     if min_post_id is not None:
         query = query.where(DynamicBranchTable.id >= min_post_id)
-
     if max_post_id is not None:
         query = query.where(DynamicBranchTable.id <= max_post_id)
 
     # Добавляем условия по timestamp
     if date_from is not None:
         query = query.where(DynamicBranchTable.timestamp >= date_from)
-
     if date_to is not None:
         query = query.where(DynamicBranchTable.timestamp <= date_to)
 
     # Добавляем условия по сумме
     if amount_from is not None:
-        print('amount_from')
-        print(amount_from)
-        print(type(amount_from))
-        # amount_from = amount_from * 1000000000
-        print(amount_from)
         query = query.where(DynamicBranchTable.amount_sent >= amount_from * 1000000000)
-
     if amount_to is not None:
-        print('amount_to')
-        print(amount_to)
         query = query.where(DynamicBranchTable.amount_sent <= amount_to * 1000000000)
 
     # Добавляем условие для sender
@@ -127,57 +98,29 @@ def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amo
     if post_hash:
         query = query.where(DynamicBranchTable.transfer_hash == post_hash)
 
-
-
-    # Устанавливаем пагинацию
-
+    # Пагинация: если есть last_post_id, получаем предыдущие записи
     if last_post_id:
-        query = query.where(DynamicBranchTable.id > last_post_id)  # Получаем посты с id больше, чем last_post_id
+        query = query.where(DynamicBranchTable.id < last_post_id)  # Получаем записи с id меньше last_post_id
 
-    query = query.order_by(DynamicBranchTable.id).limit(limit)  # Ограничиваем до limit постов
+    # Сортируем по id в обратном порядке, чтобы сначала получить последние посты
+    query = query.order_by(DynamicBranchTable.id.desc()).limit(limit)
 
-    # Используем dicts() для получения результата в виде списка словарей
+    # Получаем результат как список словарей
     list_for_users = list(query.dicts())
+
+    # Обработка значений
     for transaction in list_for_users:
         if 'amount_sent' in transaction:
-            transaction['amount_sent'] = transaction['amount_sent'] / 1000000000
+            transaction['amount_sent'] = transaction['amount_sent'] / 1000000000  # Преобразуем amount_sent
         if 'timestamp' in transaction:
             transaction['timestamp'] = transaction['timestamp'] * 1000  # Преобразуем timestamp в миллисекунды
-        if 'black_list_message' in transaction:
-            if transaction['black_list_message'] == 'True':
-                transaction[
-                    'text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
-    # print(list_for_users)  # Изменил на вывод всех постов для лучшего понимания
-    return list_for_users
-
-
-
-def get_post_data(branch_id, post_num):
-    DynamicBranchTable = create_branch_model(branch_id)
-    # Выполняем запрос к БД с фильтрацией по post_num
-    query = DynamicBranchTable.select().where(DynamicBranchTable.post_num == post_num)
-
-    for record in query:
-        amount = record.amount_sent / 1000000000
-        timestamp = record.timestamp * 1000
-        result = {
-        'id': record.id,
-        'post_num': record.post_num,
-        'sender_name': record.sender_name,
-        'amount_sent': amount,
-        'text_message': record.text_message,
-        'timestamp': timestamp,
-        'black_list_message': record.black_list_message,
-        'sender_wallet': record.sender_wallet,
-        'transfer_hash': record.transfer_hash,
-        'total_comments': record.total_comments
-    }
-
-        if result['black_list_message'] == 'True':
-            result[
+        if 'black_list_message' in transaction and transaction['black_list_message'] == 'True':
+            transaction[
                 'text_message'] = 'содержание данного поста скрыто по этическим соображениям, либо его текст нарушает законодательство той страны из которой вы его смотрите'
 
-    return result
+    # Возвращаем список постов
+    return list_for_users
+
 
 def get_comments(branch_id, post_num, last_comment_id=None, limit=20):
     # print('function')
