@@ -54,7 +54,10 @@ def get_posts():
     branch_id = request.json.get('branch_id')
     last_post_id = request.json.get('last_post_id')
     amount_from = request.json.get('amount_from')
+    amount_from = float(amount_from)
     amount_to = request.json.get('amount_to')
+    if amount_to:
+        amount_to = float(amount_to)
     date_from = request.json.get('date_from')
     date_to = request.json.get('date_to')
     post_sender = request.json.get('post_sender')

@@ -107,10 +107,17 @@ def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amo
 
     # Добавляем условия по сумме
     if amount_from is not None:
-        query = query.where(DynamicBranchTable.amount_sent >= amount_from)
+        print('amount_from')
+        print(amount_from)
+        print(type(amount_from))
+        # amount_from = amount_from * 1000000000
+        print(amount_from)
+        query = query.where(DynamicBranchTable.amount_sent >= amount_from * 1000000000)
 
     if amount_to is not None:
-        query = query.where(DynamicBranchTable.amount_sent <= amount_to)
+        print('amount_to')
+        print(amount_to)
+        query = query.where(DynamicBranchTable.amount_sent <= amount_to * 1000000000)
 
     # Добавляем условие для sender
     if post_sender:
@@ -144,11 +151,6 @@ def get_posts_list(branch_id, last_post_id=None, limit=20, amount_from=None, amo
     return list_for_users
 
 
-# query = DynamicBranchTable.select().order_by(DynamicBranchTable.id.desc())
- #    if last_post_id:
- #        last_post_id = int(last_post_id)
- #        query = query.where(DynamicBranchTable.id < last_post_id)
- #    query = query.limit(limit).dicts()
 
 def get_post_data(branch_id, post_num):
     DynamicBranchTable = create_branch_model(branch_id)
