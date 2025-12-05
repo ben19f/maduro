@@ -9,39 +9,10 @@
 запускаем приложение арр.ру
 
 
-сделал из браузера запрос
-fetch(http://127.0.0.1:25400, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: data
-    })
-    .then(response => response.json())
-    .then(data => {
-        const container = document.getElementById('public-posts-container');
-        if (isInitialLoad) {
-            container.innerHTML = '';
-        }
-     });
+в файле арр.ру пишем строки чтобы работали cors запросы
+app = Flask(__name__)
+#
+CORS(app, resources={r"/*": {"origins": "https://maduro.ru"}})  # <- фронтенд
 
-     const data = JSON.stringify({
-        branch_id: 'main_branch',
-        last_post_id: 1,
-        date_from: startDate,
-        date_to: endDate,
-        amount_from: minAmount,
-        amount_to: maxAmount,
-        post_sender: senderData,
-        min_post_id: minId,
-        max_post_id: maxId,
-        post_hash: hash|| null,
-        site_version: '0'
-    });
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: data
-    })
+исправляем на сайте ключи АРI
+

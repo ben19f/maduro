@@ -1,7 +1,10 @@
 import requests
 
 # URL из константы url
-url = 'http://127.0.0.1:25400/get_posts'
+# url = 'http://91.132.132.92:25400/get_posts'
+# url = 'https://api.maduro.ru/get_posts'
+# url = 'https://91.132.132.92/get_posts'
+url = 'http://192.168.96.19:25400/get_posts'
 
 # Данные из объекта data
 data = {
