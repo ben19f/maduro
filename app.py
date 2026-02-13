@@ -3,7 +3,24 @@ from flask_cors import CORS
 from database.branch_info_iteraction import get_branches_list, get_posts_list, get_comments, add_comment
 from outside_iteraction.api_cheker import check_api_key
 app = Flask(__name__)
-CORS(app)
+# CORS(app)
+
+
+# rom flask import Flask, request, jsonify, abort
+# from flask_cors import CORS
+# from database.branch_info_iteraction import get_branches_list, get_posts_list, get_comments, add_comment
+# from outside_iteraction.api_cheker import check_api_key
+# app = Flask(__name__)
+# #CORS(app)
+#
+#
+# #app = Flask(name)
+CORS(app, resources={r"/*": {"origins": "https://maduro.ru"}})  # <- твой фронтенд
+#
+# #@app.route("/get_posts")
+# #def get_posts():
+# #    return {"status": "ok"}
+
 
 
 @app.route('/')
